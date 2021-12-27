@@ -14,7 +14,6 @@ from random import *
 class Game:
     def __init__(self):
         #Kahraman sinifina ait metodlar can ve skor
-        #screen_w silindi
         self.kahraman_can = 3
         self.can_gosterge=pygame.image.load("grafikler/player.png")
         self.can_gosterge_pos_x=160- (self.can_gosterge.get_size()[0] * 2 + 20) #tek deger ile x deki konumunu aldık
