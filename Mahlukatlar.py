@@ -3,8 +3,6 @@ import pygame
 class Mahlukat(pygame.sprite.Sprite):
     def __init__(self, renk, x, y):
         super().__init__()
-
-
         self.image = pygame.image.load("grafikler//"+renk+".png").convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
 
