@@ -11,15 +11,13 @@ from random import *
 
 
 
-
 class Game:
     def __init__(self):
         #Kahraman sinifina ait metodlar can ve skor
-        self.screen_w = 768
-        self.screen_h = 768
+        #screen_w silindi
         self.kahraman_can = 3
         self.can_gosterge=pygame.image.load("grafikler/player.png")
-        self.can_gosterge_pos_x=150- (self.can_gosterge.get_size()[0] * 2 + 20) #tek deger ile x deki konumunu aldık
+        self.can_gosterge_pos_x=160- (self.can_gosterge.get_size()[0] * 2 + 20) #tek deger ile x deki konumunu aldık
         self.skor= 0
         self.level=1
         self.font=pygame.font.Font(os.path.join(f'grafikler/Pixeled.ttf'),20)
@@ -28,9 +26,9 @@ class Game:
 
         #engel sinifinin uygulanmasi
         self.sekil=Engel.sekil
-        self.blok_boyutu=6
+        self.blok_boyutu=7
         self.bloklar=pygame.sprite.Group()  #Blokların yaratılması ve konumlandırılması
-        self.Engel_miktari=4
+        self.Engel_miktari=5
         self.Engel_x_pos=[num*(screen_w/self.Engel_miktari) for num in range(self.Engel_miktari)] #Aralıklı olarak engelleri tek seferde tanimladik
         self.coklu_engel_yarat(*self.Engel_x_pos,xbaslangic=screen_w/15,ybaslangic=600)
 
@@ -39,7 +37,7 @@ class Game:
         self.satir = 4
         self.sutun = 4
         # self.mahlukat_yarat(self.satir,self.sutun)
-
+        self.mahlukat_carpti=False
         self.mahlukat_yon=1
         self.mahlukat_lazer=pygame.sprite.Group()
         #Ekstra sinifinin uygulanmasi
@@ -94,11 +92,14 @@ class Game:
         mahlukat_grubu=self.mahlukatlar.sprites()
         for mahlukat in mahlukat_grubu:
             if mahlukat.rect.right>=screen_w:  #ekranın sagi kontrol
-                self.mahlukat_yon=-1          #mahlukatların hizi assagida yone de bagli
+                self.mahlukat_yon=-1         #mahlukatların hizi assagida yone de bagli
                 self.mahlukat_asagi_hareket(2) #asagi haraket edecegi blok sayisi
             elif mahlukat.rect.left<=0:        #ekranın solu kontrol
                 self.mahlukat_yon=1
                 self.mahlukat_asagi_hareket(2)
+            # elif mahlukat.rect.bottom >= screen_h-30:
+            #     self.mahlukat_carpti = True   #mahlukatlarin ekranın altina carpmasi
+            #     self.oyun_sonu=True
 
     def mahlukat_asagi_hareket(self,uzaklik):
         if self.mahlukatlar:
@@ -115,7 +116,7 @@ class Game:
     def extra_mahlukat_sayac(self):
         self.extra_canlanma_suresi-=1
         if self.extra_canlanma_suresi<=0:
-            self.extra.add(Extra(choice(['sag','sol']),screen_w))
+            self.extra.add(Extra(choice(['sag','sol']),screen_w))  #Extra mahlukatın sagdan soldan gelmesini ayarladım
             self.extra_canlanma_suresi = randint(300, 500)
 
     def carpisma_kontrol(self,can):
@@ -164,8 +165,8 @@ class Game:
             for mahlukat in self.mahlukatlar:
                 pygame.sprite.spritecollide(mahlukat, self.bloklar, True)
                 if  pygame.sprite.spritecollide(mahlukat,self.kahraman,False):
-                    pygame.quit()
-                    sys.exit()
+                    self.mahlukat_carpti=True
+                    self.oyun_sonu=True
 
     def can_kontrol(self):  #can kontrol icin biseyler deniyecem
         if self.kahraman_can == 0:
@@ -178,26 +179,30 @@ class Game:
 
     def level_goster(self):
         level_gosterge=self.font.render(f'LeveL {self.level}',False,'white')
-        level_rect=level_gosterge.get_rect(topleft=(12,25))
+        level_rect=level_gosterge.get_rect(topleft=(20,25))
         screen.blit(level_gosterge,level_rect)
 
     def skor_goster(self):
         skor_gosterge=self.font.render(f'SKOR :{self.skor}',False,'white')
-        skor_rect=skor_gosterge.get_rect(topleft=(600,-10))
+        skor_rect=skor_gosterge.get_rect(topright=(screen_w-20,-10))
         screen.blit(skor_gosterge,skor_rect)
         high_skor_gosterge=self.font.render(f'HS :{self.high_score}',False,'white')
-        high_skor_rect=high_skor_gosterge.get_rect(topleft=(600,20))
+        high_skor_rect=high_skor_gosterge.get_rect(topright=(screen_w-20,20))
         screen.blit(high_skor_gosterge,high_skor_rect)
 
     def win_lose(self):
-        if not (self.level == 4)and(self.kahraman_can!=0):
+        if not (self.level == 10)and(self.kahraman_can!=0):
             if not self.mahlukatlar.sprites():
                     self.level += 1
                     print(self.level)
                     self.kahraman_can+=1
+                    print(self.kahraman_can)
                     self.can_kontrol()
-                    self.satir*=1.5
-                    self.sutun*=1.5
+                    self.mahlukat_yon*=1.2
+                    self.mahlukat_yon*=1.2
+                    if self.satir<=10:    #her seviyedeki mahlukat sayisini arttirma
+                        self.satir*=1.2
+                        self.sutun*=1.2
                     self.mahlukat_yarat(int(self.satir),int(self.sutun))
         else:
             self.post_screen()
@@ -207,10 +212,11 @@ class Game:
                     file.write(str(self.high_score))
 
     def post_screen(self):
-        if self.kahraman_can==0:
-            win_ekran = self.font.render("Oyun Bitti :( !", False, "white")
-            win_rect = win_ekran.get_rect(center=(screen_w / 2, screen_h / 2))
-            screen.blit(win_ekran, win_rect)
+
+        if self.kahraman_can==0 or self.mahlukat_carpti==True:
+            lose_ekran = self.font.render("Oyun Bitti :( !", False, "white")
+            lose_rect = lose_ekran.get_rect(center=(screen_w / 2, screen_h / 2))
+            screen.blit(lose_ekran, lose_rect)
             if (self.skor < self.high_score):
                 skor_gosterge = self.font.render(f'SKOR :{self.skor}', False, 'white')
                 skor_rect = skor_gosterge.get_rect(center=(screen_w / 2, screen_h / 3))
@@ -219,11 +225,10 @@ class Game:
                 skor_gosterge = self.font.render(f'YENI REKOR :{self.skor}', False, 'white')
                 skor_rect = skor_gosterge.get_rect(center=(screen_w / 2, screen_h / 3))
                 screen.blit(skor_gosterge, skor_rect)
-
         else:
-            yeniden_oyna = self.font.render("KAZANDIN !", False, "white")
-            yeniden_rect = yeniden_oyna.get_rect(center=(screen_w / 2, screen_h / 2))
-            screen.blit(yeniden_oyna, yeniden_rect)
+            win_ekran = self.font.render("KAZANDIN !", False, "white")
+            win_rect = win_ekran.get_rect(center=(screen_w / 2, screen_h / 2))
+            screen.blit(win_ekran, win_rect)
             if(self.skor<self.high_score):
                 skor_gosterge = self.font.render(f'SKOR :{self.skor}', False, 'white')
                 skor_rect = skor_gosterge.get_rect(center=(screen_w / 2, screen_h / 3))
@@ -257,6 +262,7 @@ class Game:
 
         self.win_lose()
 class Arkaplan:
+    #arkaplan gozunumlerinin uygulanmasi
     def __init__(self):
         self.arkaplan = pygame.image.load("grafikler/background-black.png")
         self.arkaplan=pygame.transform.scale(self.arkaplan,(screen_w, screen_h)).convert_alpha()
@@ -280,15 +286,13 @@ class Arkaplan:
 
 if __name__ == '__main__':
 
-
     pygame.init()
-    screen_w=768
+    screen_w=1000
     screen_h=768
     screen=pygame.display.set_mode((screen_w,screen_h))
     pygame.display.set_caption("Uzat Mahlukatları")
+
     clock=pygame.time.Clock()
-
-
     game=Game()
     oyun_son = game.oyun_sonu
     arkaplan=Arkaplan()
@@ -296,16 +300,20 @@ if __name__ == '__main__':
     pygame.time.set_timer(Mahlukat_Lazer,800)
     game.mahlukat_yarat(game.satir, game.sutun)
     arkaplan.arkaplanmuzik()
+
     while True:
         oyun_son=game.oyun_sonu
         if oyun_son == False:
             game.calistir()
             arkaplan.goster()
-            if (game.level == 4):
+
+            if (game.level == 10):
                 game.oyun_sonu = True
+
             if (game.kahraman_can == 0):
                 game.oyun_sonu = True
-            if game.skor > game.high_score:
+
+            if game.skor > game.high_score:   #canli high skor
                 game.high_score = game.skor
                 with open('skor.txt', 'w+') as file:
                     file.write(str(game.high_score))
@@ -317,9 +325,9 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if not game.level == 4 and game.kahraman_can!=0:
+            if not game.level == 10 and game.kahraman_can!=0 and game.mahlukat_carpti != True: #Game over ekranında lazerleri durdurduk
                 if event.type == Mahlukat_Lazer:
-                    if game.level!=3:    #level 3 de 2 li ates etsin
+                    if game.level<=4:    #level 5 den sonra atislar 2 li
                         game.mahlukat_ates()
                     else:
                         game.mahlukat_ates()
