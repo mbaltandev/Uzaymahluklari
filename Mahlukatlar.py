@@ -3,9 +3,9 @@ import pygame
 class Mahlukat(pygame.sprite.Sprite):
     def __init__(self, renk, x, y):
         super().__init__()
-        dosya = 'C:\\Users\\Asus\\Desktop\\Uzaymahluklari\\grafikler\\'+renk+'.png'
 
-        self.image = pygame.image.load(dosya).convert_alpha()
+
+        self.image = pygame.image.load("grafikler//"+renk+".png").convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
 
         if renk == 'kirmizi':
