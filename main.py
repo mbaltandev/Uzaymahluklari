@@ -16,7 +16,7 @@ class Game:
         #Kahraman sinifina ait metodlar can ve skor
         self.kahraman_can = 3
         self.can_gosterge=pygame.image.load("grafikler/player.png")
-        self.can_gosterge_pos_x=160- (self.can_gosterge.get_size()[0] * 2 + 20) #tek deger ile x deki konumunu aldık
+        self.can_gosterge_pos_x=180- (self.can_gosterge.get_size()[0] * 2 + 20)    #x de konumlandirma
         self.skor= 0
         self.level=1
         self.font=pygame.font.Font(os.path.join(f'grafikler/Pixeled.ttf'),20)
@@ -35,13 +35,16 @@ class Game:
         self.mahlukatlar=pygame.sprite.Group()
         self.satir = 4
         self.sutun = 4
-        # self.mahlukat_yarat(self.satir,self.sutun)
         self.mahlukat_carpti=False
         self.mahlukat_yon=1
         self.mahlukat_lazer=pygame.sprite.Group()
         #Ekstra sinifinin uygulanmasi
         self.extra=pygame.sprite.GroupSingle()
         self.extra_canlanma_suresi=randint(400,800)
+
+        #Delici mermiler ile ilgili islemler
+        self.delici_gosterge = pygame.image.load("grafikler/laser.png")
+        self.delici_gosterge_pos_x = 150 - (self.delici_gosterge.get_size()[0])  # x de konumlandirma
         self.sayac=0
 
         #Ses dosyalarinin eklenmesi
@@ -53,11 +56,13 @@ class Game:
         self.gameover.set_volume(1)
 
         self.oyun_sonu=False
+
         if os.path.exists('skor.txt'):
             with open('skor.txt', 'r') as file:
                 self.high_score = int(file.read())
         else:
             self.high_score = 0
+
 
     def engel_yarat(self,xbaslangic,ybaslangic,offset_x):
         for satir_index,row in enumerate(self.sekil):
@@ -120,7 +125,6 @@ class Game:
 
     def carpisma_kontrol(self,can):
         #Kahraman lazer
-
         if self.kahraman.sprite.lazerler:
             for lazer in self.kahraman.sprite.lazerler:
                 # Engel carpismalari
@@ -132,19 +136,16 @@ class Game:
                         self.skor+=mahlukat.deger
                     if (self.sayac != 0):
                             self.sayac-=1
-                            print(self.sayac)
+                            print(self.sayac)       #kac vurusun daha delici oldugunu yazdırmak icin
                             pass
-                        # if not (self.sayac == 0):
-                        #     self.sayac-=1
                     else:
                         lazer.kill()
-                        # pass
 
                     self.kill_ses.play()
                 if pygame.sprite.spritecollide(lazer,self.extra,True):
                     self.skor+=500
                     lazer.kill()
-                    self.sayac=6   #extrayı vurusak arka arkaya vurabilmek icin
+                    self.sayac=randint(5,10)                    #extrayı vurusak delici vurus aktif olacak
 
         if self.mahlukat_lazer:
             for lazer in self.mahlukat_lazer:
@@ -157,7 +158,7 @@ class Game:
                     screen.fill("#FF6347")
                     self.kahraman_can-=1
                     self.can_kontrol()
-                    print("Vuruldun")
+                    print("Vuruldun "+str(self.kahraman_can))
 
         #mahlukatların bloklara carpmasi
         if self.mahlukatlar:
@@ -175,7 +176,10 @@ class Game:
         for can in range(self.kahraman_can - 1):
             x=self.can_gosterge_pos_x + (can * (self.can_gosterge.get_size()[0] + 10))          #pozisyon ataması
             screen.blit(self.can_gosterge,(x,8))
-
+    def delici_goster(self):
+        for delici in range(self.sayac - 1):
+            x=self.delici_gosterge_pos_x + (delici*15 + (self.delici_gosterge.get_size()[0]*3.5 ))          #pozisyon ataması
+            screen.blit(self.delici_gosterge, (x, -20))
     def level_goster(self):
         level_gosterge=self.font.render(f'LeveL {self.level}',False,'white')
         level_rect=level_gosterge.get_rect(topleft=(20,25))
@@ -245,6 +249,7 @@ class Game:
         self.can_goster()
         self.skor_goster()
         self.level_goster()
+        self.delici_goster()
 
         self.mahlukat_lazer.update()
         self.mahlukat_lazer.draw(screen)
